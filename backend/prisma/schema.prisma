@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  igSid     String    @unique
+  username  String?
+  fullName  String?
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String
+  text      String?
+  payload   String?
+  direction String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Page {
+  id          String   @id @default(uuid())
+  igPageId    String   @unique
+  accessToken String?
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BotConfig {
+  id                  String   @id @default(uuid())
+  welcomeMessage      String   @default("Welcome, send your name")
+  askAddressMessage   String   @default("Thanks, now send address")
+  askPhoneMessage     String   @default("Now send phone number")
+  invalidPhoneMessage String   @default("Invalid phone number")
+  successMessage      String   @default("Success")
+  cancelMessage       String   @default("Cancelled")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AutomationRule {
+  id            String   @id @default(uuid())
+  keywords      String[] // Array of strings (supported by Postgres)
+  dmMessage     String
+  replyMessages String[] // Array of strings
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
