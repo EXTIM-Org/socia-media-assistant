@@ -32,10 +32,10 @@ export default function BotSettingsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const fsmRes = await fetch("http://localhost:3001/bot-config", { credentials: "include" });
+      const fsmRes = await fetch("/api/bot-config", { credentials: "include" });
       if (fsmRes.ok) setFsmConfig(await fsmRes.json());
 
-      const rulesRes = await fetch("http://localhost:3001/bot-config/rules", { credentials: "include" });
+      const rulesRes = await fetch("/api/bot-config/rules", { credentials: "include" });
       if (rulesRes.ok) setRules(await rulesRes.json());
     } catch (error) {
       console.error(error);
@@ -48,7 +48,7 @@ export default function BotSettingsPage() {
   const handleSaveFsm = async () => {
     try {
       setSaving(true);
-      const res = await fetch("http://localhost:3001/bot-config", {
+      const res = await fetch("/api/bot-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -68,7 +68,7 @@ export default function BotSettingsPage() {
   const handleDeleteRule = async (id: string) => {
     if (!confirm("آیا از حذف این قانون اطمینان دارید؟")) return;
     try {
-      const res = await fetch(`http://localhost:3001/bot-config/rules/${id}`, {
+      const res = await fetch(`/api/bot-config/rules/${id}`, {
         method: "DELETE",
         credentials: "include"
       });
@@ -85,7 +85,7 @@ export default function BotSettingsPage() {
       replyMessages: ["پاسخ کامنت"]
     };
     try {
-      const res = await fetch("http://localhost:3001/bot-config/rules", {
+      const res = await fetch("/api/bot-config/rules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -109,7 +109,7 @@ export default function BotSettingsPage() {
     const ruleToSave = updatedRules.find(r => r.id === id);
     if (ruleToSave) {
       try {
-        await fetch(`http://localhost:3001/bot-config/rules/${id}`, {
+        await fetch(`/api/bot-config/rules/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",

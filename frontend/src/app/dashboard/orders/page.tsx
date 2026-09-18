@@ -15,7 +15,7 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:3001/dashboard/orders");
+        const res = await fetch("/api/dashboard/orders");
         if (res.ok) {
           const data = await res.json();
           setOrders(data);

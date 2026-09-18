@@ -35,7 +35,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:3001/users", {
+      const res = await fetch("/api/users", {
         credentials: "include"
       });
       if (res.ok) {
@@ -59,7 +59,7 @@ export default function UsersPage() {
     if (!confirm("آیا از حذف این ادمین مطمئن هستید؟")) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/users/${id}`, {
+      const res = await fetch(`/api/users/${id}`, {
         method: "DELETE",
         credentials: "include"
       });
@@ -76,7 +76,7 @@ export default function UsersPage() {
     if (!newEmail || !newPassword || !newName) return;
     
     try {
-      const res = await fetch("http://localhost:3001/users", {
+      const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

@@ -19,19 +19,19 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const statsRes = await fetch("http://localhost:3001/dashboard/stats");
+        const statsRes = await fetch("/api/dashboard/stats");
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
         }
 
-        const messagesRes = await fetch("http://localhost:3001/dashboard/messages");
+        const messagesRes = await fetch("/api/dashboard/messages");
         if (messagesRes.ok) {
           const messagesData = await messagesRes.json();
           setMessages(messagesData);
         }
 
-        const chartRes = await fetch("http://localhost:3001/dashboard/chart");
+        const chartRes = await fetch("/api/dashboard/chart");
         if (chartRes.ok) {
           const chartData = await chartRes.json();
           setChartData(chartData);
