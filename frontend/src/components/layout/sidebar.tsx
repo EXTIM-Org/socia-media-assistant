@@ -10,11 +10,13 @@ import {
   Settings,
   Store,
   CreditCard,
-  Users
+  Users,
+  ShoppingBag
 } from "lucide-react";
 
 const navItems = [
   { name: "داشبورد", href: "/dashboard", icon: LayoutDashboard },
+  { name: "سفارشات", href: "/dashboard/orders", icon: ShoppingBag },
   { name: "پاسخ‌دهی خودکار", href: "/dashboard/automations", icon: MessageSquareReply },
   { name: "تنظیمات ربات", href: "/dashboard/bot-settings", icon: Bot },
   { name: "فروشگاه", href: "/dashboard/store", icon: Store },

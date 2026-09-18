@@ -53,9 +53,32 @@ export class WebhookService {
     });
   }
 
-  private async sendAndLogMessage(pageId: string, recipientId: string, text: string) {
+  private async sendAndLogMessage(pageId: string, recipientId: string, text: string, buttons?: any[]) {
     await this.logMessage(recipientId, text, 'OUTBOUND');
-    await this.metaService.sendDirectMessage(pageId, recipientId, { text });
+    let messageData: any;
+    
+    if (buttons && buttons.length > 0) {
+      const formattedButtons = buttons.slice(0, 3).map(btn => ({
+        type: 'postback',
+        title: btn.title,
+        payload: btn.payload
+      }));
+      
+      messageData = {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'button',
+            text: text,
+            buttons: formattedButtons
+          }
+        }
+      };
+    } else {
+      messageData = { text };
+    }
+    
+    await this.metaService.sendDirectMessage(pageId, recipientId, messageData);
   }
 
   private async handleMessagingEvent(event: any, pageId: string) {
@@ -65,17 +88,31 @@ export class WebhookService {
     }
     const senderId = event.sender.id;
     
-    if (event.message && event.message.text) {
-      const text = event.message.text.trim();
-      this.logger.log(`Received DM from ${senderId}: ${text}`);
-      
-      await this.logMessage(senderId, text, 'INBOUND');
+    const text = event.message?.text?.trim();
+    const quickReplyPayload = event.message?.quick_reply?.payload;
+    const postbackPayload = event.postback?.payload;
+    const postbackTitle = event.postback?.title;
+    const payload = quickReplyPayload || postbackPayload;
 
-      const botConfig = await this.botConfigService.getBotConfig();
+    if (!text && !payload) return;
 
-      if (text === 'لغو' || text === 'ویرایش') {
+    const messageText = text || `[دکمه: ${postbackTitle || payload}]`;
+    
+    this.logger.log(`Received DM from ${senderId}: ${messageText} (Payload: ${payload})`);
+    
+    await this.logMessage(senderId, messageText, 'INBOUND');
+
+    const botConfig = await this.botConfigService.getBotConfig();
+    const cancelBtn = [{ title: '❌ انصراف', payload: 'CANCEL' }];
+
+    if (payload === 'CANCEL' || text === 'لغو' || text === 'ویرایش') {
         await this.fsmService.clearUserState(senderId);
         await this.sendAndLogMessage(pageId, senderId, botConfig.cancelMessage);
+        return;
+      }
+
+      if (payload === 'SUPPORT') {
+        await this.sendAndLogMessage(pageId, senderId, 'همکاران ما در اولین فرصت پاسخگوی شما خواهند بود. 📞');
         return;
       }
 
@@ -83,31 +120,42 @@ export class WebhookService {
 
       switch (session.state) {
         case UserState.IDLE:
-          if (text === 'خرید' || text === 'سفارش') {
+          if (payload === 'START_ORDER' || text === 'خرید' || text === 'سفارش') {
             await this.fsmService.setUserSession(senderId, UserState.AWAITING_NAME);
-            await this.sendAndLogMessage(pageId, senderId, botConfig.welcomeMessage);
+            await this.sendAndLogMessage(pageId, senderId, botConfig.welcomeMessage, cancelBtn);
+          } else {
+            // Main Menu
+            const menuBtns = [
+              { content_type: 'text', title: '🛒 ثبت سفارش', payload: 'START_ORDER' },
+              { content_type: 'text', title: '📞 پشتیبانی', payload: 'SUPPORT' }
+            ];
+            await this.sendAndLogMessage(pageId, senderId, 'سلام! چطور می‌تونم کمکت کنم؟ 👇', menuBtns);
           }
           break;
 
         case UserState.AWAITING_NAME:
           await this.fsmService.setUserSession(senderId, UserState.AWAITING_ADDRESS, { name: text });
           const addressMsg = botConfig.askAddressMessage.replace('{name}', text);
-          await this.sendAndLogMessage(pageId, senderId, addressMsg);
+          await this.sendAndLogMessage(pageId, senderId, addressMsg, cancelBtn);
           break;
 
         case UserState.AWAITING_ADDRESS:
           await this.fsmService.setUserSession(senderId, UserState.AWAITING_PHONE, { address: text });
-          await this.sendAndLogMessage(pageId, senderId, botConfig.askPhoneMessage);
+          await this.sendAndLogMessage(pageId, senderId, botConfig.askPhoneMessage, cancelBtn);
           break;
 
         case UserState.AWAITING_PHONE:
+          // Convert Persian/Arabic digits to English digits
+          const englishText = text.replace(/[۰-۹]/g, (d: string) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
+                                  .replace(/[٠-٩]/g, (d: string) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+                                  
           const phoneRegex = /^(0|0098|\+98)?9\d{9}$/;
-          if (!phoneRegex.test(text)) {
-            await this.sendAndLogMessage(pageId, senderId, botConfig.invalidPhoneMessage);
+          if (!phoneRegex.test(englishText)) {
+            await this.sendAndLogMessage(pageId, senderId, botConfig.invalidPhoneMessage, cancelBtn);
             return; 
           }
 
-          const finalData: any = { ...session.data, phone: text };
+          const finalData: any = { ...session.data, phone: englishText };
           this.logger.log(`Order data collected for ${senderId}: ${JSON.stringify(finalData)}`);
           
           await this.fsmService.clearUserState(senderId);
@@ -118,7 +166,6 @@ export class WebhookService {
           await this.sendAndLogMessage(pageId, senderId, successMsg);
           break;
       }
-    }
   }
 
   private async handleChangeEvent(change: any, pageId: string) {

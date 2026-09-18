@@ -18,4 +18,16 @@ export class DashboardController {
     this.logger.log('Fetching dashboard latest messages');
     return this.dashboardService.getLatestMessages();
   }
+
+  @Get('chart')
+  async getChartData() {
+    this.logger.log('Fetching dashboard chart data');
+    return this.dashboardService.getChartData();
+  }
+
+  @Get('orders')
+  async getOrders() {
+    this.logger.log('Fetching orders (leads)');
+    return this.dashboardService.getOrders();
+  }
 }

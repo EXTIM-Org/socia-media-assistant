@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, MessageCircle, ShoppingBag, TrendingUp } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -13,6 +14,7 @@ export default function DashboardPage() {
   });
 
   const [messages, setMessages] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,6 +29,12 @@ export default function DashboardPage() {
         if (messagesRes.ok) {
           const messagesData = await messagesRes.json();
           setMessages(messagesData);
+        }
+
+        const chartRes = await fetch("http://localhost:3001/dashboard/chart");
+        if (chartRes.ok) {
+          const chartData = await chartRes.json();
+          setChartData(chartData);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -110,8 +118,38 @@ export default function DashboardPage() {
               روند روزانه پاسخ‌دهی به دایرکت‌ها و کامنت‌ها
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-80 flex items-center justify-center border-t border-border/30 bg-secondary/10 m-2 rounded-lg">
-            <span className="text-muted-foreground italic">نمودار در اینجا قرار می‌گیرد...</span>
+          <CardContent className="h-[350px] w-full pt-6 border-t border-border/30 bg-secondary/5 rounded-b-lg">
+            {chartData.length === 0 ? (
+              <div className="h-full w-full flex items-center justify-center">
+                <span className="text-muted-foreground italic">در حال بارگذاری نمودار ۳۰ روز گذشته...</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ direction: 'ltr' }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(150,150,150,0.1)" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#888888" 
+                    fontSize={11} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(value) => {
+                      const d = new Date(value);
+                      return new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' }).format(d);
+                    }}
+                  />
+                  <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px', direction: 'rtl' }}
+                    itemStyle={{ color: '#fff' }}
+                    labelFormatter={(label) => new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(label as string))}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  <Line type="monotone" dataKey="inbound" name="دریافتی (کاربر)" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="outbound" name="ارسالی (ربات)" stroke="#8b5cf6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
         
