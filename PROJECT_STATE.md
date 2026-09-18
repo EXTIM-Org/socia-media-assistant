@@ -31,13 +31,13 @@ To build an intelligent, automated Instagram Assistant that connects to the Meta
    - *Swap Memory:* The VPS swap space was manually increased to `4GB` to ensure stability across multiple running apps.
 7. **Version Control:** Code is initialized with Git and pushed to the `main` branch on GitHub.
 
-## ⏸️ Current Status
-**Status:** PAUSED / SERVICES STOPPED ON VPS.
-- The user has intentionally stopped all PM2 processes (`instagram-backend`, `instagram-frontend`), brought down the Docker containers (`docker-compose down`), and killed the Cloudflare Tunnel on the remote VPS to free up server RAM (since other apps like Typesense and X-UI are running on it).
-- The codebase is clean, safely pushed to GitHub, and ready to be spun back up whenever the user decides to resume.
+## 🟢 Current Status
+**Status:** ACTIVE / WEBHOOK VERIFIED & WORKING.
+- The PM2 processes (`instagram-backend`, `instagram-frontend`), Docker containers (DB/Redis on alternate ports 5433/6380), and Cloudflare Tunnel are all running successfully on the VPS.
+- The Meta Webhook is verified. The Facebook Page is properly linked to the Instagram account, the App has a Page Access Token, and end-to-end DM processing via the Meta Graph API is fully functional.
+- Prisma tables have been pushed to the new database, and the FSM successfully processes inbound text and sends replies.
 
-## 🚀 Next Steps (When Resuming)
-1. **Restart Services:** Run `docker-compose up -d` for DB/Redis, then `pm2 start` for backend/frontend on the VPS.
-2. **Re-establish Tunnel:** Run Cloudflare Tunnel (or Ngrok) again to get a new HTTPS URL.
-3. **Meta Developer Dashboard:** Update the Webhook Callback URL in the Meta Dashboard with the new tunnel URL.
-4. **End-to-End Testing:** Send a real message to the connected Instagram page and monitor the FSM bot's live response.
+## 🚀 Next Steps
+1. **Bot Customization:** Customize the bot's text responses and automation rules via the frontend dashboard.
+2. **Production Domain:** Move from `trycloudflare` temporary URLs to a persistent domain or persistent Cloudflare Tunnel for the webhook.
+3. **Testing Edge Cases:** Test handling of other messaging events (postbacks, quick replies, images) and comment automation.

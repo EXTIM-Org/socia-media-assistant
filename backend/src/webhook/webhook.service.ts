@@ -59,6 +59,10 @@ export class WebhookService {
   }
 
   private async handleMessagingEvent(event: any, pageId: string) {
+    if (!event.sender || !event.sender.id) {
+      this.logger.debug(`Ignored non-sender event: ${JSON.stringify(event)}`);
+      return;
+    }
     const senderId = event.sender.id;
     
     if (event.message && event.message.text) {
