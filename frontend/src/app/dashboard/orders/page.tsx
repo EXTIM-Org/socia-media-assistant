@@ -10,6 +10,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -93,13 +94,17 @@ export default function OrdersPage() {
                     <th className="px-6 py-4 font-medium">نام مشتری</th>
                     <th className="px-6 py-4 font-medium">شماره موبایل</th>
                     <th className="px-6 py-4 font-medium">آدرس</th>
-                    <th className="px-6 py-4 font-medium">آیدی اینستاگرام (IGSID)</th>
+                    <th className="px-6 py-4 font-medium">آیدی اینستاگرام (Username)</th>
                     <th className="px-6 py-4 font-medium">تاریخ ثبت</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
                   {filteredOrders.map((order, idx) => (
-                    <tr key={order.id} className="hover:bg-muted/20 transition-colors">
+                    <tr 
+                      key={order.id} 
+                      className="hover:bg-muted/20 transition-colors cursor-pointer"
+                      onClick={() => setSelectedOrder(order)}
+                    >
                       <td className="px-6 py-4 font-medium text-muted-foreground">
                         {idx + 1}
                       </td>
@@ -112,8 +117,8 @@ export default function OrdersPage() {
                       <td className="px-6 py-4 text-muted-foreground">
                         {order.address || "-"}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground text-xs font-mono">
-                        {order.user?.igSid}
+                      <td className="px-6 py-4 text-muted-foreground text-sm font-mono" dir="ltr" style={{ textAlign: "right" }}>
+                        {order.user?.username ? `@${order.user.username}` : "-"}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
                         {new Intl.DateTimeFormat("fa-IR", {
@@ -132,6 +137,69 @@ export default function OrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-lg border-border/50 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <CardHeader className="border-b border-border/40 pb-4 bg-muted/20 relative">
+              <div className="flex items-center gap-4">
+                {selectedOrder.user?.profilePic ? (
+                  <img src={selectedOrder.user.profilePic} alt="Profile" className="w-16 h-16 rounded-full border-2 border-primary/20 object-cover" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-xl font-bold text-muted-foreground">
+                    {selectedOrder.user?.username?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    {selectedOrder.user?.fullName || selectedOrder.fullName || selectedOrder.user?.username || "بدون نام"}
+                    {selectedOrder.user?.isVerified && (
+                      <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">تیک آبی</span>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1" dir="ltr">
+                    @{selectedOrder.user?.username || "unknown"}
+                  </CardDescription>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">شماره تماس:</span>
+                  <p className="font-mono text-base font-semibold" dir="ltr">{selectedOrder.phone}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">تعداد فالوور:</span>
+                  <p className="font-semibold">{selectedOrder.user?.followerCount != null ? new Intl.NumberFormat('fa-IR').format(selectedOrder.user.followerCount) : "نامشخص"}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">وضعیت فالو:</span>
+                  <p className="font-semibold">{selectedOrder.user?.isFollower === true ? "شما را فالو دارد" : selectedOrder.user?.isFollower === false ? "فالو ندارد" : "نامشخص"}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground">آیدی یکتا (IGSID):</span>
+                  <p className="font-mono text-xs text-muted-foreground break-all" dir="ltr">{selectedOrder.user?.igSid}</p>
+                </div>
+                <div className="col-span-2 space-y-1 bg-secondary/20 p-3 rounded-lg border border-border/50">
+                  <span className="text-muted-foreground">آدرس کامل:</span>
+                  <p className="font-medium leading-relaxed">{selectedOrder.address || "ثبت نشده"}</p>
+                </div>
+              </div>
+              <div className="mt-6 pt-4 border-t border-border/40 flex justify-end">
+                <Button onClick={() => setSelectedOrder(null)} variant="outline">بستن پنجره</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

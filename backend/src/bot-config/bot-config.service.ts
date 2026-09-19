@@ -26,6 +26,12 @@ export class BotConfigService {
         invalidPhoneMessage: data.invalidPhoneMessage,
         successMessage: data.successMessage,
         cancelMessage: data.cancelMessage,
+        saveUsername: data.saveUsername !== undefined ? data.saveUsername : config.saveUsername,
+        saveProfilePic: data.saveProfilePic !== undefined ? data.saveProfilePic : config.saveProfilePic,
+        saveIsVerified: data.saveIsVerified !== undefined ? data.saveIsVerified : config.saveIsVerified,
+        saveFollowerCount: data.saveFollowerCount !== undefined ? data.saveFollowerCount : config.saveFollowerCount,
+        saveIsFollower: data.saveIsFollower !== undefined ? data.saveIsFollower : config.saveIsFollower,
+        saveIgSid: data.saveIgSid !== undefined ? data.saveIgSid : config.saveIgSid,
       },
     });
   }

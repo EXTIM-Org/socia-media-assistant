@@ -33,10 +33,36 @@ export class WebhookService {
   }
 
   private async getOrCreateUser(igSid: string) {
-    let user = await this.prisma.user.findUnique({ where: { igSid } });
+    const config = await this.botConfigService.getBotConfig();
+    
+    let dbIgSid = igSid;
+    if (!config.saveIgSid) {
+      const crypto = require('crypto');
+      dbIgSid = crypto.createHash('sha256').update(igSid).digest('hex');
+    }
+
+    let user = await this.prisma.user.findUnique({ where: { igSid: dbIgSid } });
     if (!user) {
+      const metaProfile = await this.metaService.getUserProfile(igSid);
+      const userData: any = { igSid: dbIgSid };
+      
+      if (metaProfile) {
+        if (config.saveUsername) userData.username = metaProfile.username || `user_${igSid}`;
+        if (config.saveProfilePic) userData.profilePic = metaProfile.profile_pic;
+        if (config.saveIsVerified) userData.isVerified = metaProfile.is_verified_user;
+        if (config.saveFollowerCount) userData.followerCount = metaProfile.follower_count;
+        if (config.saveIsFollower) userData.isFollower = metaProfile.is_user_follow_business;
+        userData.fullName = metaProfile.name;
+      } else {
+        if (config.saveUsername) {
+            userData.username = `user_${igSid}`;
+        } else {
+            userData.username = `user_anonymous`;
+        }
+      }
+
       user = await this.prisma.user.create({
-        data: { igSid, username: `user_${igSid}` },
+        data: userData,
       });
     }
     return user;

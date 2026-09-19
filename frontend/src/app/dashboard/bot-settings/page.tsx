@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, MessageSquare, Plus, Trash2, Save, Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 export default function BotSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"fsm" | "rules">("rules");
+  const [activeTab, setActiveTab] = useState<"fsm" | "rules" | "data">("rules");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: "success" | "error", text: string} | null>(null);
@@ -19,7 +19,13 @@ export default function BotSettingsPage() {
     askPhoneMessage: "",
     invalidPhoneMessage: "",
     successMessage: "",
-    cancelMessage: ""
+    cancelMessage: "",
+    saveUsername: true,
+    saveProfilePic: true,
+    saveIsVerified: true,
+    saveFollowerCount: true,
+    saveIsFollower: true,
+    saveIgSid: true
   });
 
   // Rules State
@@ -176,12 +182,64 @@ export default function BotSettingsPage() {
           <Bot className="h-4 w-4" />
           مراحل ثبت سفارش
         </button>
+        <button
+          onClick={() => setActiveTab("data")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "data" 
+              ? "bg-background text-foreground shadow-sm" 
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          تنظیمات دیتا
+        </button>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
           <p>در حال دریافت اطلاعات...</p>
+        </div>
+      ) : activeTab === "data" ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border-border/50 shadow-md bg-card/40 backdrop-blur-sm lg:col-span-2">
+            <CardHeader className="border-b border-border/40 bg-muted/20 pb-4">
+              <CardTitle className="text-xl">تنظیمات استخراج اطلاعات از متا</CardTitle>
+              <CardDescription>
+                مشخص کنید ربات به صورت اتوماتیک چه اطلاعاتی را از پروفایل کاربران استخراج و در دیتابیس ذخیره کند.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {[
+                { key: "saveIgSid", label: "ذخیره کد یکتای کاربر (IGSID)" },
+                { key: "saveUsername", label: "استخراج و ذخیره آیدی اینستاگرام (Username)" },
+                { key: "saveProfilePic", label: "دریافت و ذخیره عکس پروفایل" },
+                { key: "saveIsVerified", label: "بررسی وضعیت تیک آبی (Is Verified)" },
+                { key: "saveFollowerCount", label: "استخراج تعداد فالوورها" },
+                { key: "saveIsFollower", label: "بررسی وضعیت فالو (آیا پیج شما را فالو دارد؟)" },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-secondary/10">
+                  <span className="text-sm font-semibold">{item.label}</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={(fsmConfig as any)[item.key]} 
+                      onChange={(e) => setFsmConfig({...fsmConfig, [item.key]: e.target.checked})} 
+                    />
+                    <div className="w-11 h-6 bg-muted-foreground/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+              ))}
+              
+              <div className="md:col-span-2 flex justify-end mt-4">
+                <Button onClick={handleSaveFsm} disabled={saving} className="min-w-[120px] rounded-full shadow-lg shadow-primary/20">
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  ذخیره تنظیمات
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       ) : activeTab === "fsm" ? (
         <div className="grid gap-6 lg:grid-cols-2">

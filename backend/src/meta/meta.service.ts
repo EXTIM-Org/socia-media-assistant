@@ -96,5 +96,23 @@ export class MetaService {
     this.logger.debug(`[MOCK] Assuming true for checkFollowStatus for User ${igUserId}`);
     return true;
   }
+
+  async getUserProfile(igSid: string): Promise<any> {
+    const pageAccessToken = process.env.META_ACCESS_TOKEN;
+    if (!pageAccessToken) {
+      this.logger.error('META_ACCESS_TOKEN is missing!');
+      return null;
+    }
+
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/${igSid}?fields=name,username,profile_pic,follower_count,is_verified_user,is_user_follow_business&access_token=${pageAccessToken}`
+      );
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Failed to fetch user profile for ${igSid}: ${error.response?.data?.error?.message || error.message}`);
+      return null;
+    }
+  }
 }
 
