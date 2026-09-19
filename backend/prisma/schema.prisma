@@ -10,9 +10,13 @@ datasource db {
 model User {
   id        String    @id @default(uuid())
   igSid     String    @unique
-  username  String?
-  fullName  String?
-  phone     String?
+  username      String?
+  fullName      String?
+  phone         String?
+  profilePic    String?
+  isVerified    Boolean?
+  followerCount Int?
+  isFollower    Boolean?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   messages  Message[]
@@ -68,6 +72,12 @@ model BotConfig {
   invalidPhoneMessage String   @default("Invalid phone number")
   successMessage      String   @default("Success")
   cancelMessage       String   @default("Cancelled")
+  saveUsername        Boolean  @default(true)
+  saveProfilePic      Boolean  @default(true)
+  saveIsVerified      Boolean  @default(true)
+  saveFollowerCount   Boolean  @default(true)
+  saveIsFollower      Boolean  @default(true)
+  saveIgSid           Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
