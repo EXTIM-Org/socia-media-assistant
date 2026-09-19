@@ -33,8 +33,8 @@ export default function OrdersPage() {
   const filteredOrders = orders.filter(order => 
     order.phone?.includes(search) || 
     order.fullName?.includes(search) ||
-    order.username?.includes(search) ||
-    order.igSid?.includes(search)
+    order.user?.username?.includes(search) ||
+    order.user?.igSid?.includes(search)
   );
 
   return (
@@ -92,6 +92,7 @@ export default function OrdersPage() {
                     <th className="px-6 py-4 font-medium">ردیف</th>
                     <th className="px-6 py-4 font-medium">نام مشتری</th>
                     <th className="px-6 py-4 font-medium">شماره موبایل</th>
+                    <th className="px-6 py-4 font-medium">آدرس</th>
                     <th className="px-6 py-4 font-medium">آیدی اینستاگرام (IGSID)</th>
                     <th className="px-6 py-4 font-medium">تاریخ ثبت</th>
                   </tr>
@@ -108,8 +109,11 @@ export default function OrdersPage() {
                       <td className="px-6 py-4 font-mono text-primary font-medium" dir="ltr" style={{ textAlign: "right" }}>
                         {order.phone}
                       </td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {order.address || "-"}
+                      </td>
                       <td className="px-6 py-4 text-muted-foreground text-xs font-mono">
-                        {order.igSid}
+                        {order.user?.igSid}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
                         {new Intl.DateTimeFormat("fa-IR", {
@@ -118,7 +122,7 @@ export default function OrdersPage() {
                           day: "numeric",
                           hour: "2-digit",
                           minute: "2-digit"
-                        }).format(new Date(order.updatedAt))}
+                        }).format(new Date(order.createdAt))}
                       </td>
                     </tr>
                   ))}

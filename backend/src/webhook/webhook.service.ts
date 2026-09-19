@@ -88,6 +88,11 @@ export class WebhookService {
     }
     const senderId = event.sender.id;
     
+    if (senderId === pageId || event.message?.is_echo) {
+      this.logger.debug('Ignored echo/self message');
+      return;
+    }
+    
     const text = event.message?.text?.trim();
     const quickReplyPayload = event.message?.quick_reply?.payload;
     const postbackPayload = event.postback?.payload;
@@ -103,69 +108,99 @@ export class WebhookService {
     await this.logMessage(senderId, messageText, 'INBOUND');
 
     const botConfig = await this.botConfigService.getBotConfig();
-    const cancelBtn = [{ title: '❌ انصراف', payload: 'CANCEL' }];
 
-    if (payload === 'CANCEL' || text === 'لغو' || text === 'ویرایش') {
+    if (payload === 'CANCEL' || text === 'انصراف' || text === 'لغو') {
         await this.fsmService.clearUserState(senderId);
         await this.sendAndLogMessage(pageId, senderId, botConfig.cancelMessage);
         return;
-      }
+    }
 
-      if (payload === 'SUPPORT') {
-        await this.sendAndLogMessage(pageId, senderId, 'همکاران ما در اولین فرصت پاسخگوی شما خواهند بود. 📞');
-        return;
-      }
-
-      const session = await this.fsmService.getUserSession(senderId);
-
-      switch (session.state) {
-        case UserState.IDLE:
-          if (payload === 'START_ORDER' || text === 'خرید' || text === 'سفارش') {
-            await this.fsmService.setUserSession(senderId, UserState.AWAITING_NAME);
-            await this.sendAndLogMessage(pageId, senderId, botConfig.welcomeMessage, cancelBtn);
-          } else {
-            // Main Menu
-            const menuBtns = [
-              { content_type: 'text', title: '🛒 ثبت سفارش', payload: 'START_ORDER' },
-              { content_type: 'text', title: '📞 پشتیبانی', payload: 'SUPPORT' }
-            ];
-            await this.sendAndLogMessage(pageId, senderId, 'سلام! چطور می‌تونم کمکت کنم؟ 👇', menuBtns);
-          }
-          break;
-
-        case UserState.AWAITING_NAME:
-          await this.fsmService.setUserSession(senderId, UserState.AWAITING_ADDRESS, { name: text });
-          const addressMsg = botConfig.askAddressMessage.replace('{name}', text);
-          await this.sendAndLogMessage(pageId, senderId, addressMsg, cancelBtn);
-          break;
-
-        case UserState.AWAITING_ADDRESS:
-          await this.fsmService.setUserSession(senderId, UserState.AWAITING_PHONE, { address: text });
-          await this.sendAndLogMessage(pageId, senderId, botConfig.askPhoneMessage, cancelBtn);
-          break;
-
-        case UserState.AWAITING_PHONE:
-          // Convert Persian/Arabic digits to English digits
-          const englishText = text.replace(/[۰-۹]/g, (d: string) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
-                                  .replace(/[٠-٩]/g, (d: string) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
-                                  
-          const phoneRegex = /^(0|0098|\+98)?9\d{9}$/;
-          if (!phoneRegex.test(englishText)) {
-            await this.sendAndLogMessage(pageId, senderId, botConfig.invalidPhoneMessage, cancelBtn);
-            return; 
-          }
-
-          const finalData: any = { ...session.data, phone: englishText };
-          this.logger.log(`Order data collected for ${senderId}: ${JSON.stringify(finalData)}`);
-          
+    if (text === 'ویرایش') {
+        const session = await this.fsmService.getUserSession(senderId);
+        
+        if (session.state === UserState.IDLE || session.state === UserState.AWAITING_NAME) {
           await this.fsmService.clearUserState(senderId);
-          let successMsg = botConfig.successMessage
-            .replace('{name}', finalData.name || '')
-            .replace('{phone}', finalData.phone || '')
-            .replace('{senderId}', senderId);
-          await this.sendAndLogMessage(pageId, senderId, successMsg);
-          break;
-      }
+          await this.sendAndLogMessage(pageId, senderId, 'پروسه خرید قبلی شما لغو شد. برای شروع مجدد، «خرید» را بفرستید.');
+          return;
+        } else if (session.state === UserState.AWAITING_ADDRESS) {
+          await this.fsmService.setUserSession(senderId, UserState.AWAITING_NAME);
+          await this.sendAndLogMessage(pageId, senderId, botConfig.welcomeMessage);
+          return;
+        } else if (session.state === UserState.AWAITING_PHONE) {
+          await this.fsmService.setUserSession(senderId, UserState.AWAITING_ADDRESS, { name: session.data.name });
+          const addressMsg = botConfig.askAddressMessage.replace('{name}', session.data.name || '');
+          await this.sendAndLogMessage(pageId, senderId, addressMsg);
+          return;
+        }
+    }
+
+    if (payload === 'SUPPORT') {
+      await this.sendAndLogMessage(pageId, senderId, 'همکاران ما در اولین فرصت پاسخگوی شما خواهند بود. 📞');
+      return;
+    }
+
+    const session = await this.fsmService.getUserSession(senderId);
+
+    switch (session.state) {
+      case UserState.IDLE:
+        if (payload === 'START_ORDER' || text === 'خرید' || text === 'سفارش') {
+          await this.fsmService.setUserSession(senderId, UserState.AWAITING_NAME);
+          const welcomeText = `${botConfig.welcomeMessage}\n\n(شما در هر مرحله می‌توانید با ارسال کلمه «انصراف» پروسه را متوقف کرده و یا با ارسال کلمه «ویرایش» به مرحله قبل برگردید.)`;
+          await this.sendAndLogMessage(pageId, senderId, welcomeText);
+        } else {
+          // Main Menu
+          const menuBtns = [
+            { content_type: 'text', title: '🛒 ثبت سفارش', payload: 'START_ORDER' },
+            { content_type: 'text', title: '📞 پشتیبانی', payload: 'SUPPORT' }
+          ];
+          await this.sendAndLogMessage(pageId, senderId, 'سلام! چطور می‌تونم کمکت کنم؟ 👇', menuBtns);
+        }
+        break;
+
+      case UserState.AWAITING_NAME:
+        await this.fsmService.setUserSession(senderId, UserState.AWAITING_ADDRESS, { name: text });
+        const addressMsg = botConfig.askAddressMessage.replace('{name}', text);
+        await this.sendAndLogMessage(pageId, senderId, addressMsg);
+        break;
+
+      case UserState.AWAITING_ADDRESS:
+        await this.fsmService.setUserSession(senderId, UserState.AWAITING_PHONE, { address: text });
+        await this.sendAndLogMessage(pageId, senderId, botConfig.askPhoneMessage);
+        break;
+
+      case UserState.AWAITING_PHONE:
+        // Convert Persian/Arabic digits to English digits
+        const englishText = text.replace(/[۰-۹]/g, (d: string) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
+                                .replace(/[٠-٩]/g, (d: string) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+                                
+        const phoneRegex = /^(0|0098|\+98)?9\d{9}$/;
+        if (!phoneRegex.test(englishText)) {
+          await this.sendAndLogMessage(pageId, senderId, botConfig.invalidPhoneMessage);
+          return; 
+        }
+
+        const finalData: any = { ...session.data, phone: englishText };
+        this.logger.log(`Order data collected for ${senderId}: ${JSON.stringify(finalData)}`);
+        
+        const user = await this.getOrCreateUser(senderId);
+        
+        await this.prisma.order.create({
+          data: {
+            userId: user.id,
+            fullName: finalData.name,
+            address: finalData.address,
+            phone: finalData.phone,
+          }
+        });
+        
+        await this.fsmService.clearUserState(senderId);
+        let successMsg = botConfig.successMessage
+          .replace('{name}', finalData.name || '')
+          .replace('{phone}', finalData.phone || '')
+          .replace('{senderId}', senderId);
+        await this.sendAndLogMessage(pageId, senderId, successMsg);
+        break;
+    }
   }
 
   private async handleChangeEvent(change: any, pageId: string) {

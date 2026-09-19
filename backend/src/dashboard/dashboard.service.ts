@@ -65,10 +65,9 @@ export class DashboardService {
   }
 
   async getOrders() {
-    return this.prisma.user.findMany({
-      where: { phone: { not: null } },
-      orderBy: { updatedAt: 'desc' },
-      include: { messages: { take: 1, orderBy: { createdAt: 'desc' } } }
+    return this.prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: true }
     });
   }
 }
