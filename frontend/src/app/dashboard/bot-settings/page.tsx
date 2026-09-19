@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Bot, MessageSquare, Plus, Trash2, Save, Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 export default function BotSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"fsm" | "rules" | "data">("rules");
+  const [activeTab, setActiveTab] = useState<"fsm" | "rules" | "data" | "watermark">("rules");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{type: "success" | "error", text: string} | null>(null);
@@ -25,7 +25,10 @@ export default function BotSettingsPage() {
     saveIsVerified: true,
     saveFollowerCount: true,
     saveIsFollower: true,
-    saveIgSid: true
+    saveIgSid: true,
+    enableWatermark: true,
+    watermarkText: "",
+    watermarkLinkUrl: ""
   });
 
   // Rules State
@@ -193,6 +196,17 @@ export default function BotSettingsPage() {
           <Sparkles className="h-4 w-4" />
           تنظیمات دیتا
         </button>
+        <button
+          onClick={() => setActiveTab("watermark")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "watermark" 
+              ? "bg-background text-foreground shadow-sm" 
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          کپی‌رایت و تبلیغات
+        </button>
       </div>
 
       {loading ? (
@@ -233,6 +247,66 @@ export default function BotSettingsPage() {
               ))}
               
               <div className="md:col-span-2 flex justify-end mt-4">
+                <Button onClick={handleSaveFsm} disabled={saving} className="min-w-[120px] rounded-full shadow-lg shadow-primary/20">
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  ذخیره تنظیمات
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : activeTab === "watermark" ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border-border/50 shadow-md bg-card/40 backdrop-blur-sm lg:col-span-2">
+            <CardHeader className="border-b border-border/40 bg-muted/20 pb-4">
+              <CardTitle className="text-xl">تنظیمات کپی‌رایت و تبلیغات</CardTitle>
+              <CardDescription>
+                واترمارک یا امضای دلخواه خود را تنظیم کنید تا در انتهای فرآیند خرید برای مشتری ارسال شود.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-secondary/10 w-full">
+                <div className="space-y-1">
+                  <span className="text-base font-semibold block">فعال‌سازی امضا (واترمارک)</span>
+                  <span className="text-xs text-muted-foreground">اگر این گزینه فعال باشد، متن و دکمه زیر پیام ثبت سفارش اضافه خواهد شد.</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={(fsmConfig as any).enableWatermark} 
+                    onChange={(e) => setFsmConfig({...fsmConfig, enableWatermark: e.target.checked})} 
+                  />
+                  <div className="w-11 h-6 bg-muted-foreground/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              {(fsmConfig as any).enableWatermark && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl border border-border/50 bg-background/50">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold">متن امضا</label>
+                    {renderTextarea(
+                      (fsmConfig as any).watermarkText || "", 
+                      (v) => setFsmConfig({...fsmConfig, watermarkText: v}),
+                      "مثال: قدرت گرفته از دستیار هوشمند...",
+                      3
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold">لینک دکمه (آدرس سایت)</label>
+                    <Input 
+                      value={(fsmConfig as any).watermarkLinkUrl || ""} 
+                      onChange={(e) => setFsmConfig({...fsmConfig, watermarkLinkUrl: e.target.value})}
+                      placeholder="https://example.com"
+                      className="bg-background"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">این لینک به صورت یک دکمه در انتهای پیام قرار می‌گیرد.</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end mt-4">
                 <Button onClick={handleSaveFsm} disabled={saving} className="min-w-[120px] rounded-full shadow-lg shadow-primary/20">
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   ذخیره تنظیمات

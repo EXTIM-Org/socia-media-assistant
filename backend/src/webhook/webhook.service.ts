@@ -84,11 +84,12 @@ export class WebhookService {
     let messageData: any;
     
     if (buttons && buttons.length > 0) {
-      const formattedButtons = buttons.slice(0, 3).map(btn => ({
-        type: 'postback',
-        title: btn.title,
-        payload: btn.payload
-      }));
+      const formattedButtons = buttons.slice(0, 3).map(btn => {
+        if (btn.type === 'web_url') {
+          return { type: 'web_url', url: btn.url, title: btn.title };
+        }
+        return { type: 'postback', title: btn.title, payload: btn.payload };
+      });
       
       messageData = {
         attachment: {
@@ -224,7 +225,18 @@ export class WebhookService {
           .replace('{name}', finalData.name || '')
           .replace('{phone}', finalData.phone || '')
           .replace('{senderId}', senderId);
-        await this.sendAndLogMessage(pageId, senderId, successMsg);
+          
+        let successBtns = undefined;
+        if (botConfig.enableWatermark) {
+          successMsg += `\n\n${botConfig.watermarkText}`;
+          if (botConfig.watermarkLinkUrl) {
+            successBtns = [
+              { type: 'web_url', title: '🔗 سایت ما', url: botConfig.watermarkLinkUrl }
+            ];
+          }
+        }
+        
+        await this.sendAndLogMessage(pageId, senderId, successMsg, successBtns);
         break;
     }
   }

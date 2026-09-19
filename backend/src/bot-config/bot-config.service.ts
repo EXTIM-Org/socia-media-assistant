@@ -32,6 +32,9 @@ export class BotConfigService {
         saveFollowerCount: data.saveFollowerCount !== undefined ? data.saveFollowerCount : config.saveFollowerCount,
         saveIsFollower: data.saveIsFollower !== undefined ? data.saveIsFollower : config.saveIsFollower,
         saveIgSid: data.saveIgSid !== undefined ? data.saveIgSid : config.saveIgSid,
+        enableWatermark: data.enableWatermark !== undefined ? data.enableWatermark : config.enableWatermark,
+        watermarkText: data.watermarkText !== undefined ? data.watermarkText : config.watermarkText,
+        watermarkLinkUrl: data.watermarkLinkUrl !== undefined ? data.watermarkLinkUrl : config.watermarkLinkUrl,
       },
     });
   }

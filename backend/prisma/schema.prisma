@@ -78,6 +78,9 @@ model BotConfig {
   saveFollowerCount   Boolean  @default(true)
   saveIsFollower      Boolean  @default(true)
   saveIgSid           Boolean  @default(true)
+  enableWatermark     Boolean  @default(true)
+  watermarkText       String   @default("")
+  watermarkLinkUrl    String   @default("")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
